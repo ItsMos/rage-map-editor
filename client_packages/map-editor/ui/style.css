@@ -1,0 +1,73 @@
+* {box-sizing: border-box}
+body {
+  color: #f8f8f8;
+  font-family: sans-serif;
+  user-select: none;
+}
+
+.btns {
+  position: fixed;
+  bottom: 1em;
+  display: flex;
+  /* width: 400px; */
+  /* justify-content: space-between; */
+}
+.btn {
+  padding: 25px 30px;
+  margin: 0 0.5em;
+  border: none;
+  background-color: rgba(255,255,255,0.3);
+  background-size: 70%, cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.btn:active {outline: none;opacity: 0.5}
+
+.btn.object {background-image: url(img/cube.png)}
+.btn.object:hover {
+  background-image: url(img/cube.png),linear-gradient(rgba(255,255,255,0.5),transparent);
+}
+.btn.vehicle {background-image: url(img/car.png)}
+.btn.vehicle:hover {
+  background-image: url(img/car.png),linear-gradient(rgba(255,255,255,0.5),transparent);
+}
+
+.side-bar {
+  padding: 10px 15px;
+  background: rgba(0, 0, 0, .8);
+  font-family: monospace;
+  height: 85%;
+  width: 24%;
+  position: fixed;
+  /* overflow: hidden; */
+}
+
+#search {
+  background: rgb(255, 255, 255, 0.4);
+  border: 0;
+  text-align: center;
+  color: inherit;
+  padding: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+::placeholder {
+  color: #c4c4c4;
+  font-size: 0.8em;
+}
+
+.list {
+  list-style: none;
+  text-align: center;
+  padding: 0;
+  height: 87%;
+  overflow-y: auto;
+}
+.list li {
+  padding: 5px;
+  /* background: royalblue; */
+  border-bottom: 1px dashed #000;
+}
+.list > li:hover {
+  background: #c4c4c4;
+}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="vue">
+
+    <div class="btns">
+      <button class="btn object"></button>
+      <button class="btn vehicle"></button>
+    </div>
+
+    <div class="side-bar">
+      <label for="search">
+        SEARCH: 
+        <input id='search' @input="search.debounce(800, 'h')" v-model='query' type="text" placeholder="OBJECT NAME" autocomplete="off"></label>
+      <hr>
+
+      <ul class="list">
+        <li v-for="(hash, obj) in list"
+          @click="viewObject(obj)"
+          v-if="obj.includes(debouncedQuery)">
+          <!-- object list filtered to the search query -->
+          {{obj}}
+        </li>
+      </ul>
+    </div>
+
+  </div>
+  <script src="debounce.js"></script>
+  <script src="vue.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
