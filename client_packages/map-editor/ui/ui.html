@@ -9,30 +9,81 @@
 <body>
   <div id="vue">
 
-    <div class="btns">
-      <button class="btn object"></button>
-      <button class="btn vehicle"></button>
+    <div class="nav" v-show='!window == true'>
+      <button class="nav-btn object" @click="windowOpen('objects')"></button>
+      <button class="nav-btn vehicle" @click="windowOpen('')"></button>
+      <button class="nav-btn marker" @click="windowOpen('marker')"></button>
     </div>
 
-    <div class="side-bar">
+    <div class="side-bar object-list" v-if="window == 'objects'">
       <label for="search">
         SEARCH: 
-        <input id='search' @input="search.debounce(800, 'h')" v-model='query' type="text" placeholder="OBJECT NAME" autocomplete="off"></label>
+        <input id='search' @input="search.debounce(600)" v-model='query' type="text" placeholder="OBJECT NAME" autocomplete="off"></label>
       <hr>
 
-      <ul class="list">
-        <li v-for="(hash, obj) in list"
-          @click="viewObject(obj)"
-          v-if="obj.includes(debouncedQuery)">
-          <!-- object list filtered to the search query -->
-          {{obj}}
-        </li>
-      </ul>
+      <div class="list">
+        <ul>
+          <li v-for="(obj, name) in result">{{obj.obj}}</li>
+        </ul>
+      </div>
+
+      <div class="btns">
+        <button class="btn btn-error" @click="windowCancel">Cancel</button>
+      </div>
+    </div>
+
+    <div class="side-bar marker" v-if="window == 'marker'">
+      <h1>Marker</h1>
+      <div class="input">
+        <label for="marker-type">Type:</label>
+        <select v-model='props.markerType' id="marker-type">
+          <option value="0">first</option>
+          <option value="1">second</option>
+        </select>
+      </div>
+      
+      <div class="input">
+        <label for="marker-size">Size:</label>
+        <input v-model='props.markerSize' id='marker-size' min='0' type="number">
+      </div>
+
+      <div class="input input-group color">
+        <label for="marker-red">Red</label>
+        <label for="marker-green">Green</label>
+        <label for="marker-blue">Blue</label>
+        <label for="marker-alpha">Alpha</label>
+        <input v-model='props.color[0]' id='marker-red' min='0' type="number">
+        <input v-model='props.color[1]' id='marker-green' min='0' type="number">
+        <input v-model='props.color[2]' id='marker-blue' min='0' type="number">
+        <input v-model='props.color[3]' id='marker-alpha' min='0' type="number">
+      </div>
+
+      <p>Position:</p>
+      <div class="input-group position  ">
+        <div class="input-badge">
+          <div class="badge">&cross;</div>
+          <input v-model='props.pos.x' type="number">
+        </div>
+        <div class="input-badge">
+          <div class="badge">&Yscr;</div>
+          <input v-model='props.pos.y' type="number">
+        </div>
+        <div class="input-badge">
+          <div class="badge">&Zscr;</div>
+          <input v-model='props.pos.z' type="number">
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn btn-error" @click="windowCancel">Cancel</button>
+        <button class="btn btn-success" @click="windowSave">Save</button>
+      </div>
     </div>
 
   </div>
   <script src="debounce.js"></script>
   <script src="vue.js"></script>
+  <script src="fuse.min.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

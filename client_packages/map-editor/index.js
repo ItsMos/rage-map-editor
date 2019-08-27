@@ -1,4 +1,5 @@
 let noclip = require('./map-editor/noclip')
+let player = mp.players.local
 
 function inFrontOf (pos, heading, dist) {
   heading *= Math.PI / 180
@@ -15,10 +16,12 @@ mp.events.add({
     noclip.start()
     cef = mp.browsers.new('package://map-editor/ui/ui.html')
     let objectsList = require('./map-editor/objects').list
-    mp.game.graphics.notify('loaded ' + Object.keys(objectsList).length + ' objects')
-    cef.execute(`app.list = ${JSON.stringify(objectsList)}`)
+    objectsList = Object.keys(objectsList).map(function(key) {
+      return { obj: key}
+    })
+    cef.execute(`app.updateObjectsList(${JSON.stringify(objectsList)})`)
     mp.game.ui.displayRadar(false)
-    mp.gui.chat.push('map editor started')
+    mp.gui.chat.push('Map editor started')
   },
 
   'me:stop': ()=> {
@@ -32,9 +35,10 @@ mp.events.add({
 // CEF Events
 mp.events.add({
   'me:viewObject': ()=>{},
-  'me:createObject': object=> {
-    let pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
-    mp.objects.new(mp.game.joaat(object), pos, {
+  'me:viewMarker': ()=>{},
+  'me:placeObject': (object, pos, rotation) => {
+    let _pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
+    mp.objects.new(mp.game.joaat(object), _pos, {
       rotation: new mp.Vector3(0,0,0),
       dimension: player.dimension
     })
@@ -44,4 +48,4 @@ mp.events.add({
 setTimeout(() => {
   mp.events.call('me:start')
   mp.gui.chat.push('type '+typeof(noClipCamera))
-}, 5000)
+}, 2000)
