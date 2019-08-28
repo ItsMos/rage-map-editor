@@ -4,28 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Map Editor</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/vue-virtual-scroller.css"/>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div id="vue">
 
-    <div class="nav" v-show='!window == true'>
+    <div class="nav" v-show='!window == true && !isHoldingAnObject'>
       <button class="nav-btn object" @click="windowOpen('objects')"></button>
       <button class="nav-btn vehicle" @click="windowOpen('')"></button>
       <button class="nav-btn marker" @click="windowOpen('marker')"></button>
     </div>
 
-    <div class="side-bar object-list" v-if="window == 'objects'">
+    <div class="side-bar object-list" v-show="window == 'objects'">
       <label for="search">
         SEARCH: 
         <input id='search' @input="search.debounce(600)" v-model='query' type="text" placeholder="OBJECT NAME" autocomplete="off"></label>
       <hr>
 
-      <div class="list">
-        <ul>
-          <li v-for="(obj, name) in result">{{obj.obj}}</li>
-        </ul>
-      </div>
+      <recycle-scroller
+        class="list scroller" :items="result" :item-size="30"
+        key-field="obj" v-slot="{ item,index }" wtag='ul'>
+        <div :class='{active: selectedObj.index == index && selectedObj.obj == item.obj}'
+          @click='objectClick(index, item.obj)'>
+          {{ item.obj }}
+        </div>
+      </recycle-scroller>
 
       <div class="btns">
         <button class="btn btn-error" @click="windowCancel">Cancel</button>
@@ -81,9 +85,10 @@
     </div>
 
   </div>
-  <script src="debounce.js"></script>
-  <script src="vue.js"></script>
-  <script src="fuse.min.js"></script>
-  <script src="main.js"></script>
+  <script src="js/debounce.js"></script>
+  <script src="js/vue.js"></script>
+  <script src="js/vue-virtual-scroller.min.js"></script>
+  <script src="js/fuse.min.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

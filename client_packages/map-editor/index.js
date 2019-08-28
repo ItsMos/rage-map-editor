@@ -9,6 +9,7 @@ function inFrontOf (pos, heading, dist) {
 }
 
 let cef
+let objectInView
 
 mp.events.add({
   'me:start': ()=> {
@@ -34,9 +35,31 @@ mp.events.add({
 
 // CEF Events
 mp.events.add({
-  'me:viewObject': ()=>{},
-  'me:viewMarker': ()=>{},
-  'me:placeObject': (object, pos, rotation) => {
+  'me:viewObject': object=>{
+    let pos
+    if (objectInView) {
+      pos = objectInView.position
+      objectInView.destroy()
+    } else
+      pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
+    
+    objectInView = mp.objects.new(mp.game.joaat(object), pos, {
+      rotation: new mp.Vector3(0,0,0),
+      dimension: player.dimension
+    })
+  },
+  'me:createObject': ()=> {
+    if (!objectInView) return
+    // draw a box/light around the object and control it with keyboard
+  },
+  'me:cancelObjectView': ()=> {
+    if (objectInView) {
+      objectInView.destroy()
+      objectInView = null
+    }
+  },
+  'me:createMarker': ()=>{},
+  'me:placeObject': (object, rotation) => {
     let _pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
     mp.objects.new(mp.game.joaat(object), _pos, {
       rotation: new mp.Vector3(0,0,0),
@@ -47,5 +70,4 @@ mp.events.add({
 
 setTimeout(() => {
   mp.events.call('me:start')
-  mp.gui.chat.push('type '+typeof(noClipCamera))
 }, 2000)
