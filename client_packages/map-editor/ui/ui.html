@@ -24,7 +24,7 @@
 
       <recycle-scroller
         class="list scroller" :items="result" :item-size="30"
-        key-field="obj" v-slot="{ item,index }" wtag='ul'>
+        key-field="obj" v-slot="{ item,index }">
         <div :class='{active: selectedObj.index == index && selectedObj.obj == item.obj}'
           @click='objectClick(index, item.obj)'>
           {{ item.obj }}
