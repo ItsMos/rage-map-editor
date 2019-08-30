@@ -5,6 +5,16 @@ body {
   user-select: none;
 }
 
+.crosshair {
+  fill: skyblue;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%,-50%);
+}
+
 .nav {
   position: fixed;
   bottom: 1em;

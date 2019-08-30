@@ -9,6 +9,7 @@ let app = new Vue({
     result: [],
     selectedObj: {index: 0, obj: ''},
     isHoldingAnObject: false,
+    crosshair: true,
     props: {
       objectModel: null,
       markerType: 0,
@@ -29,6 +30,15 @@ let app = new Vue({
     // })
     // this.updateObjectsList(x)
     
+  },
+
+  computed: {
+    crosshairStyle() {
+      return {
+        opacity: this.crosshair ? 1 : 0,
+        fill: this.isHoldingAnObject ? 'red' : 'skyblue'
+      }
+    }
   },
   methods: {
     updateObjectsList(data) {
