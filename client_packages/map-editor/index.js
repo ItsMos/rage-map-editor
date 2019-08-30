@@ -26,10 +26,14 @@ let keys = {
 }
 
 mp.keys.bind(keysHex.F2, true, function() {
-  if (mp.gui.cursor.visible)
+  if (mp.gui.cursor.visible) {
     mp.gui.cursor.show(false, false)
-  else
+    cef.execute('app.crosshair = true')
+  }
+  else {
     mp.gui.cursor.show(true, true)
+    cef.execute('app.crosshair = false')
+  }
 })
 
 let cef
@@ -73,17 +77,18 @@ function deselectObject() {
 
 // render function
 function moveObject() {
-  let sign = 0
+  let UpDownSign = 0
+  let RLSign = 0
   let zSign = 0
   let dist = 0.85
-  if (mp.keys.isDown(keys.Up)) {
-    // mp.game.graphics.drawText('upp', [0.5,0.5], {font: 1, center: true, color:[255,255,255,255], scale: [1,1]})
-    sign = 1
-  }
-  if (mp.keys.isDown(keys.Down)) {
-    sign = -1
-    // mp.game.graphics.drawText('down', [0.5,0.5], {font: 1, center: true, color:[255,255,255,255], scale: [1,1]})
-  }
+  if (mp.keys.isDown(keys.Up))
+    UpDownSign = 1
+  if (mp.keys.isDown(keys.Down))
+    UpDownSign = -1
+  if (mp.keys.isDown(keys.Right))
+    RLSign = 1
+  if (mp.keys.isDown(keys.Left))
+    RLSign = -1
   if (mp.keys.isDown(keys.PageUp))
     zSign = 1
   if (mp.keys.isDown(keys.PageDown))
@@ -91,8 +96,16 @@ function moveObject() {
 
   let pos = objectInView.position
   let camDir = noClipCamera.getDirection()
-  camDir = new mp.Vector3(camDir.x * (sign * dist), camDir.y * (sign * dist), camDir.z)
-  objectInView.position = new mp.Vector3(pos.x+camDir.x,pos.y+camDir.y, pos.z + (dist * zSign))
+  let rightVec = new mp.Vector3(camDir.y,  -camDir.x, 0)
+  rightVec = new mp.Vector3(
+    rightVec.x * (RLSign * dist),
+    rightVec.y * (RLSign * dist),
+    0)
+  camDir = new mp.Vector3(
+    camDir.x * (UpDownSign * dist),
+    camDir.y * (UpDownSign * dist),
+    0)
+  objectInView.position = new mp.Vector3(pos.x+camDir.x + rightVec.x,pos.y+camDir.y + rightVec.y, pos.z + (dist * zSign))
 }
 
 mp.events.add({
