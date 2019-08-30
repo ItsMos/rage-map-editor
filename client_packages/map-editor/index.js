@@ -8,18 +8,24 @@ function inFrontOf (pos, heading, dist) {
   return pos
 }
 
-let keys = {
+let keysHex = {
   F2: 0x71,
   F4: 0x73
 }
-let keysASCII = {
-  Q: 69,
-  E: 81,
+let keys = {
+  Left: 37,
+  Up: 38,
+  Right: 39,
+  Down: 40,
+  PageUp: 33,
+  PageDown: 34,
+  E: 69,
+  Q: 81,
   LCtrl: 17,
   Shift: 16
 }
 
-mp.keys.bind(keys.F2, true, function() {
+mp.keys.bind(keysHex.F2, true, function() {
   if (mp.gui.cursor.visible)
     mp.gui.cursor.show(false, false)
   else
@@ -30,8 +36,8 @@ let cef
 // let objectInView
 global.objectInView = null
 
-let boxRender
-let boxMarker
+let boxRender, boxMarker, motionRender;
+
 function selectObject(obj) {
   obj = obj ? obj: objectInView
   mp.gui.cursor.visible = false
@@ -63,6 +69,30 @@ function deselectObject() {
   boxRender.destroy()
   boxMarker.destroy()
   boxRender = boxMarker = null
+}
+
+// render function
+function moveObject() {
+  let sign = 0
+  let zSign = 0
+  let dist = 0.85
+  if (mp.keys.isDown(keys.Up)) {
+    // mp.game.graphics.drawText('upp', [0.5,0.5], {font: 1, center: true, color:[255,255,255,255], scale: [1,1]})
+    sign = 1
+  }
+  if (mp.keys.isDown(keys.Down)) {
+    sign = -1
+    // mp.game.graphics.drawText('down', [0.5,0.5], {font: 1, center: true, color:[255,255,255,255], scale: [1,1]})
+  }
+  if (mp.keys.isDown(keys.PageUp))
+    zSign = 1
+  if (mp.keys.isDown(keys.PageDown))
+    zSign = -1
+
+  let pos = objectInView.position
+  let camDir = noClipCamera.getDirection()
+  camDir = new mp.Vector3(camDir.x * (sign * dist), camDir.y * (sign * dist), camDir.z)
+  objectInView.position = new mp.Vector3(pos.x+camDir.x,pos.y+camDir.y, pos.z + (dist * zSign))
 }
 
 mp.events.add({
@@ -108,6 +138,8 @@ mp.events.add({
     if (!objectInView) return
     // draw a box/light around the object and control it with keyboard
     selectObject()
+    // enable object movement
+    motionRender = new mp.Event('render', moveObject)
   },
   'me:cancelObjectView': ()=> {
     if (objectInView) {
