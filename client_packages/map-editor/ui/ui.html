@@ -14,7 +14,7 @@
       <use xlink:href="img/crosshair.svg#Capa_1"></use>
    </svg>
 
-    <div class="nav" v-show='!window == true && !isHoldingAnObject'>
+    <div class="nav" v-show='!window == true && !isHoldingObject'>
       <button class="nav-btn object" @click="windowOpen('objects')"></button>
       <button class="nav-btn vehicle" @click="windowOpen('')"></button>
       <button class="nav-btn marker" @click="windowOpen('marker')"></button>

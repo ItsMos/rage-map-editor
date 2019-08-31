@@ -8,6 +8,28 @@ function inFrontOf (pos, heading, dist) {
   return pos
 }
 
+function showCrosshair(show, isHoldingObject) {
+  cef.execute(`app.crosshair = ${show}`)
+  if (isHoldingObject != null)
+    cef.execute(`app.isHoldingObject = ${isHoldingObject}`)
+}
+
+function hitTest() {
+  let camPos = noClipCamera.getCoord()
+  let camDir = noClipCamera.getDirection()
+  let pos2 = new mp.Vector3((camDir.x * 200) + (camPos.x), (camDir.y * 200) + (camPos.y), (camDir.z * 200) + (camPos.z))
+  let r = mp.raycasting.testPointToPoint(camPos,pos2)
+  if (r) {
+    if (isNaN(r.entity)) {
+      return r.entity
+    } else {
+      // world entity handle
+      return false
+    }
+  }
+  return false
+}
+
 let keysHex = {
   F2: 0x71,
   F4: 0x73
@@ -22,29 +44,47 @@ let keys = {
   E: 69,
   Q: 81,
   LCtrl: 17,
+  Alt: 18,
   Shift: 16
 }
 
 mp.keys.bind(keysHex.F2, true, function() {
   if (mp.gui.cursor.visible) {
     mp.gui.cursor.show(false, false)
-    cef.execute('app.crosshair = true')
+    showCrosshair(true)
   }
   else {
     mp.gui.cursor.show(true, true)
-    cef.execute('app.crosshair = false')
+    showCrosshair(false)
+  }
+})
+
+mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, hitEntity)=> {
+  if (mp.gui.cursor.visible)
+    return
+  if (leftOrRight == 'left' && upOrDown == 'down') {
+    let hit = hitTest()
+    if (!hit) {
+      deselectObject()
+    } else {
+      if (selectedObject == hit)
+        return
+      selectedObject = hit
+      selectObject()
+      motionRender = new mp.Event('render', moveObject)
+    }
   }
 })
 
 let cef
-// let objectInView
-global.objectInView = null
+let selectedObject
 
 let boxRender, boxMarker, motionRender;
 
 function selectObject(obj) {
-  obj = obj ? obj: objectInView
+  obj = obj ? obj: selectedObject
   mp.gui.cursor.visible = false
+  showCrosshair(true,true)
   // draw box
   if (boxMarker) boxMarker.destroy()
   if (boxRender) boxRender.destroy()
@@ -70,9 +110,15 @@ function selectObject(obj) {
   })
 }
 function deselectObject() {
-  boxRender.destroy()
-  boxMarker.destroy()
-  boxRender = boxMarker = null
+  if (boxRender)
+    boxRender.destroy()
+  if (boxMarker)
+    boxMarker.destroy()
+  if (motionRender)
+    motionRender.destroy()
+  boxRender = boxMarker = motionRender = null
+  selectedObject = null
+  showCrosshair(true, false)
 }
 
 // render function
@@ -80,7 +126,11 @@ function moveObject() {
   let UpDownSign = 0
   let RLSign = 0
   let zSign = 0
-  let dist = 0.85
+  let dist = 0.70
+  if (mp.keys.isDown(keys.Alt))
+    dist = 0.25
+  if (mp.keys.isDown(keys.Shift))
+    dist = 1.25
   if (mp.keys.isDown(keys.Up))
     UpDownSign = 1
   if (mp.keys.isDown(keys.Down))
@@ -94,7 +144,7 @@ function moveObject() {
   if (mp.keys.isDown(keys.PageDown))
     zSign = -1
 
-  let pos = objectInView.position
+  let pos = selectedObject.position
   let camDir = noClipCamera.getDirection()
   let rightVec = new mp.Vector3(camDir.y,  -camDir.x, 0)
   rightVec = new mp.Vector3(
@@ -105,7 +155,7 @@ function moveObject() {
     camDir.x * (UpDownSign * dist),
     camDir.y * (UpDownSign * dist),
     0)
-  objectInView.position = new mp.Vector3(pos.x+camDir.x + rightVec.x,pos.y+camDir.y + rightVec.y, pos.z + (dist * zSign))
+  selectedObject.position = new mp.Vector3(pos.x+camDir.x + rightVec.x,pos.y+camDir.y + rightVec.y, pos.z + (dist * zSign))
 }
 
 mp.events.add({
@@ -134,30 +184,30 @@ mp.events.add({
 mp.events.add({
   'me:viewObject': object=>{
     let pos
-    if (objectInView) {
-      pos = objectInView.position
-      objectInView.destroy()
+    if (selectedObject) {
+      pos = selectedObject.position
+      selectedObject.destroy()
     } else {
       pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
       pos.z += noClipCamera.getDirection().z * 10
     }
     
-    objectInView = mp.objects.new(mp.game.joaat(object), pos, {
+    selectedObject = mp.objects.new(mp.game.joaat(object), pos, {
       rotation: new mp.Vector3(0,0,0),
       dimension: player.dimension
     })
   },
   'me:createObject': ()=> {
-    if (!objectInView) return
+    if (!selectedObject) return
     // draw a box/light around the object and control it with keyboard
     selectObject()
     // enable object movement
     motionRender = new mp.Event('render', moveObject)
   },
   'me:cancelObjectView': ()=> {
-    if (objectInView) {
-      objectInView.destroy()
-      objectInView = null
+    if (selectedObject) {
+      selectedObject.destroy()
+      selectedObject = null
     }
   },
   'me:createMarker': ()=>{},
@@ -173,3 +223,10 @@ mp.events.add({
 setTimeout(() => {
   mp.events.call('me:start')
 }, 2000)
+
+// for tests
+global.mapEditor = {
+  hitTest,
+  selectedObject,
+  cef
+}

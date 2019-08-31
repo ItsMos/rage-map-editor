@@ -8,7 +8,7 @@ let app = new Vue({
     list: [],
     result: [],
     selectedObj: {index: 0, obj: ''},
-    isHoldingAnObject: false,
+    isHoldingObject: false,
     crosshair: true,
     props: {
       objectModel: null,
@@ -36,7 +36,7 @@ let app = new Vue({
     crosshairStyle() {
       return {
         opacity: this.crosshair ? 1 : 0,
-        fill: this.isHoldingAnObject ? 'red' : 'skyblue'
+        fill: this.isHoldingObject ? 'red' : 'skyblue'
       }
     }
   },
@@ -72,7 +72,6 @@ let app = new Vue({
     objectClick(i, obj) {
       if (this.selectedObj.index == i && this.selectedObj.obj == obj) {
         this.window = null
-        this.isHoldingAnObject = true
         // start moving the viewed object in game world
         mp.trigger('me:createObject')
       } else {
