@@ -1,5 +1,16 @@
 let noclip = require('./map-editor/noclip')
 let player = mp.players.local
+let objects = {}
+
+function generateId() {
+  let i = 0
+  while (true) {
+    if (objects[i] == null)
+      return i
+    i++
+  }
+  return false
+}
 
 function inFrontOf (pos, heading, dist) {
   heading *= Math.PI / 180
@@ -32,7 +43,8 @@ function hitTest() {
 
 let keysHex = {
   F2: 0x71,
-  F4: 0x73
+  F4: 0x73,
+  Delete: 0x2E
 }
 let keys = {
   Left: 37,
@@ -59,15 +71,34 @@ mp.keys.bind(keysHex.F2, true, function() {
   }
 })
 
+mp.keys.bind(keysHex.Delete, true, ()=> {
+  if (selectedObject) {
+    let id = selectedObject.id
+    deselectObject()
+    objects[id].destroy()
+    mp.events.callRemote('me:deleteObject', id)
+    delete objects[id]
+  }
+})
+
 mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, hitEntity)=> {
   if (mp.gui.cursor.visible)
     return
   if (leftOrRight == 'left' && upOrDown == 'down') {
     let hit = hitTest()
     if (!hit) {
-      deselectObject()
+      if (selectedObject) {
+        let obj = {
+          id: selectedObject.id,
+          model: selectedObject.model,
+          position: selectedObject.position,
+          rotation: selectedObject.rotation
+        }
+        mp.events.callRemote('me:updateObject', JSON.stringify(obj))
+        deselectObject()
+      }
     } else {
-      if (selectedObject == hit)
+      if (selectedObject == hit || viewedObject == hit)
         return
       selectedObject = hit
       selectObject()
@@ -77,7 +108,7 @@ mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, h
 })
 
 let cef
-let selectedObject
+let selectedObject, viewedObject;
 
 let boxRender, boxMarker, motionRender;
 
@@ -184,40 +215,45 @@ mp.events.add({
 mp.events.add({
   'me:viewObject': object=>{
     let pos
-    if (selectedObject) {
-      pos = selectedObject.position
-      selectedObject.destroy()
+    if (viewedObject) {
+      pos = viewedObject.position
+      viewedObject.destroy()
     } else {
       pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
       pos.z += noClipCamera.getDirection().z * 10
     }
     
-    selectedObject = mp.objects.new(mp.game.joaat(object), pos, {
+    viewedObject = mp.objects.new(mp.game.joaat(object), pos, {
       rotation: new mp.Vector3(0,0,0),
       dimension: player.dimension
     })
   },
   'me:createObject': ()=> {
-    if (!selectedObject) return
+    if (!viewedObject) return
     // draw a box/light around the object and control it with keyboard
+    selectedObject = viewedObject
     selectObject()
     // enable object movement
     motionRender = new mp.Event('render', moveObject)
+    let obj = {
+      id: generateId(),
+      model: viewedObject.model,
+      position: viewedObject.position,
+      rotation: viewedObject.rotation
+    }
+    selectedObject.id = obj.id
+    objects[obj.id] = selectedObject
+    mp.events.callRemote('me:placeObject', JSON.stringify(obj))
+    viewedObject = null
   },
   'me:cancelObjectView': ()=> {
-    if (selectedObject) {
-      selectedObject.destroy()
-      selectedObject = null
+    if (viewedObject) {
+      viewedObject.destroy()
+      viewedObject = null
     }
   },
   'me:createMarker': ()=>{},
-  'me:placeObject': (object, rotation) => {
-    let _pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
-    mp.objects.new(mp.game.joaat(object), _pos, {
-      rotation: new mp.Vector3(0,0,0),
-      dimension: player.dimension
-    })
-  }
+
 })
 
 setTimeout(() => {
@@ -225,8 +261,9 @@ setTimeout(() => {
 }, 2000)
 
 // for tests
-global.mapEditor = {
+global.ME = {
   hitTest,
   selectedObject,
-  cef
+  cef,
+  objects
 }
