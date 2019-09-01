@@ -13,6 +13,5 @@ mp.events.add({
 
   'me:deleteObject': (player, id)=> {
     delete entities[id]
-    console.log('deleted ' + id, typeof  id)
   }
 })
