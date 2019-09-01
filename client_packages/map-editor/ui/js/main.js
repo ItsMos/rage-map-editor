@@ -7,6 +7,7 @@ let app = new Vue({
     query: '',
     list: [],
     result: [],
+    entities: {},
     selectedObj: {index: 0, obj: ''},
     isHoldingObject: false,
     crosshair: true,
@@ -29,7 +30,6 @@ let app = new Vue({
     //   return { obj: key}
     // })
     // this.updateObjectsList(x)
-    
   },
 
   computed: {
@@ -57,53 +57,85 @@ let app = new Vue({
     },
 
     search() {
-      // this.st = Date.now()
-      // console.log('starting search')
-
       if (this.query.trim() === '')
         this.result = this.list
       else
         this.result = this.fuse.search(this.query.trim())
+    },
 
-      // let d = (Date.now() - this.st)/ 1000
-      // console.log('Search done in '+ d)
+    generateEntityName(ent,id) {
+      return `${ent.type} ${ent.model? ent.model +' ':''}(${id})`
     },
 
     objectClick(i, obj) {
       if (this.selectedObj.index == i && this.selectedObj.obj == obj) {
-        this.window = null
-        // start moving the viewed object in game world
-        mp.trigger('me:createObject')
+        if (this.window == 'objects') {
+          this.window = null
+          this.selectedObj = {index: null, obj: ''}
+          // start moving the viewed object in game world
+          mp.trigger('me:createObject')
+        }
       } else {
-        mp.trigger('me:viewObject', obj)
+        this.selectedObj.index = i
+        this.selectedObj.obj = obj
+        if (this.window == 'objects')
+          mp.trigger('me:viewObject', obj)
+
+        if (this.window == 'entities')
+          mp.trigger('me:selectEntity', app.entities[i].id)
       }
-      this.selectedObj.index = i
-      this.selectedObj.obj = obj
-    },
-
-    newObjectPicked() {
-
     },
 
     createMarker() {
 
     },
 
-    windowOpen(win) {
-      app.window = win
-    },
+    windowOpen(win) {app.window = win},
     
     windowCancel() {
+      if (app.window == 'entities')
+        app.entities = {}
       // selected in new object list
       if (this.selectedObj != null) {
         mp.trigger('me:cancelObjectView')
       }
       app.window = null
       this.selectedObj = {index: null, obj: ''}
+      mp.invoke('focus', false)
+      this.crosshair = true
     },
 
     windowSave() {
       app.window = null
     }
+  }
+})
+
+addEventListener('keydown', e=> {
+  if (!app.window) return
+  if (e.key == 'ArrowDown' || e.key == 'ArrowUp') {
+    let arr, i
+    if (app.window == 'objects')
+      arr = app.result
+    else return
+
+    if (e.key == 'ArrowDown') {
+      if (app.selectedObj.index < arr.length - 1)
+        i = app.selectedObj.index + 1
+      else return
+    }
+    if (e.key == 'ArrowUp') {
+      if (app.selectedObj.index > 0)
+        i = app.selectedObj.index - 1
+      else return
+    }
+    if (app.window == 'objects')
+      app.objectClick(i, arr[i].obj)
+    
+    let el = document.querySelector('.active')
+    if (el) el.scrollIntoViewIfNeeded()
+
+  } else if (e.key == 'Enter') {
+    console.log('enter')
   }
 })

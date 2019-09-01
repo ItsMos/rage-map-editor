@@ -40,6 +40,22 @@
       </div>
     </div>
 
+    <div class="side-bar right entities" v-show="window == 'entities'">
+      <h1>Created Entities</h1>
+
+      <div class="list">
+        <div v-for='(ent,i) in entities'
+          :class='{active: selectedObj.index == i && selectedObj.obj == generateEntityName(ent, ent.id)}'
+          @click='objectClick(i, generateEntityName(ent, ent.id))'>
+          {{ generateEntityName(ent, ent.id) }}
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn btn-error" @click="windowCancel">Cancel</button>
+      </div>
+    </div>
+
     <div class="side-bar marker" v-if="window == 'marker'">
       <h1>Marker</h1>
       <div class="input">

@@ -1,11 +1,11 @@
 let noclip = require('./map-editor/noclip')
 let player = mp.players.local
-let objects = {}
+let entities = {}
 
 function generateId() {
   let i = 0
   while (true) {
-    if (objects[i] == null)
+    if (entities[i] == null)
       return i
     i++
   }
@@ -43,7 +43,8 @@ function hitTest() {
 
 let keysHex = {
   F2: 0x71,
-  F4: 0x73,
+  F3: 0x72,
+  F5: 0x74,
   Delete: 0x2E
 }
 let keys = {
@@ -71,13 +72,37 @@ mp.keys.bind(keysHex.F2, true, function() {
   }
 })
 
+function generateEntityList() {
+  let list = {}
+  for (let id in entities) {
+    list[id] = {id: id, type: entities[id].type}
+    if (entities[id].model)
+      list[id].model = entities[id].model
+  }
+  return list
+}
+
+mp.keys.bind(keysHex.F5, true, ()=> {
+  let entities = generateEntityList()
+  cef.execute(`
+    if (app.window == null) {
+      app.entities = ${JSON.stringify(entities)}
+      app.windowOpen('entities')
+    } else if (app.window == 'entities') {
+      app.window = null
+      app.entities = {}
+    }
+  `)
+})
+
 mp.keys.bind(keysHex.Delete, true, ()=> {
   if (selectedObject) {
     let id = selectedObject.id
     deselectObject()
-    objects[id].destroy()
+    entities[id].destroy()
     mp.events.callRemote('me:deleteObject', id)
-    delete objects[id]
+    cef.execute(`Vue.delete(app.entities, ${id})`)
+    delete entities[id]
   }
 })
 
@@ -114,7 +139,6 @@ let boxRender, boxMarker, motionRender;
 
 function selectObject(obj) {
   obj = obj ? obj: selectedObject
-  mp.gui.cursor.visible = false
   showCrosshair(true,true)
   // draw box
   if (boxMarker) boxMarker.destroy()
@@ -195,12 +219,12 @@ mp.events.add({
     noclip.start()
     cef = mp.browsers.new('package://map-editor/ui/ui.html')
     let objectsList = require('./map-editor/objects').list
-    objectsList = Object.keys(objectsList).map(function(key) {
-      return { obj: key}
+    objectsList = objectsList.map(obj=> {
+      return { obj: obj}
     })
     cef.execute(`app.updateObjectsList(${JSON.stringify(objectsList)})`)
     mp.game.ui.displayRadar(false)
-    mp.gui.chat.push('Map editor started')
+    mp.gui.chat.push('Map Editor started')
   },
 
   'me:stop': ()=> {
@@ -232,6 +256,7 @@ mp.events.add({
     if (!viewedObject) return
     // draw a box/light around the object and control it with keyboard
     selectedObject = viewedObject
+    mp.gui.cursor.visible = false
     selectObject()
     // enable object movement
     motionRender = new mp.Event('render', moveObject)
@@ -242,7 +267,7 @@ mp.events.add({
       rotation: viewedObject.rotation
     }
     selectedObject.id = obj.id
-    objects[obj.id] = selectedObject
+    entities[obj.id] = selectedObject
     mp.events.callRemote('me:placeObject', JSON.stringify(obj))
     viewedObject = null
   },
@@ -251,6 +276,18 @@ mp.events.add({
       viewedObject.destroy()
       viewedObject = null
     }
+  },
+  'me:selectEntity': (id)=> {
+    deselectObject()
+    selectedObject = entities[id]
+    selectObject()
+    motionRender = new mp.Event('render', moveObject)
+    let pos = inFrontOf(selectedObject.position, 0, 10)
+    noClipCamera.setCoord(pos.x,pos.y,pos.z)
+    noClipCamera.pointAt(selectedObject.handle, 0,0,0,true)
+    setTimeout(()=> {
+      noClipCamera.stopPointing()
+    }, 500)
   },
   'me:createMarker': ()=>{},
 
@@ -263,7 +300,6 @@ setTimeout(() => {
 // for tests
 global.ME = {
   hitTest,
-  selectedObject,
   cef,
-  objects
+  entities
 }

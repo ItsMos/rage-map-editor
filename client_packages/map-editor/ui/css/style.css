@@ -69,9 +69,8 @@ body {
   overflow: hidden;
 }
 
-.side-bar > .btns {
-  text-align: center;
-}
+.side-bar.right {right: 10px}
+.side-bar > .btns {text-align: center}
 
 .side-bar.marker {
   height: auto;
