@@ -5,8 +5,8 @@ let app = new Vue({
   data: {
     window: null,
     query: '',
-    list: [],
-    result: [],
+    objects: [],
+    objectsResult: [],
     entities: {},
     selectedObj: {index: 0, obj: ''},
     isHoldingObject: false,
@@ -42,8 +42,8 @@ let app = new Vue({
   },
   methods: {
     updateObjectsList(data) {
-      this.list = data
-      this.result = this.list
+      this.objects = data
+      this.objectsResult = this.objects
       let options = {
         shouldSort: true,
         threshold: 0.2,
@@ -53,18 +53,25 @@ let app = new Vue({
         minMatchCharLength: 1,
         keys: ['obj']
       }
-      this.fuse = new Fuse(this.list, options)
+      this.fuse = new Fuse(this.objects, options)
     },
 
     search() {
       if (this.query.trim() === '')
-        this.result = this.list
+        this.objectsResult = this.objects
       else
-        this.result = this.fuse.search(this.query.trim())
+        this.objectsResult = this.fuse.search(this.query.trim())
     },
 
     generateEntityName(ent,id) {
-      return `${ent.type} ${ent.model? ent.model +' ':''}(${id})`
+      let str =  `${ent.type} .x. (${id})`
+      if (ent.name)
+        str = str.replace('.x.', ent.name)
+      else if (ent.model)
+        str = str.replace('.x.', ent.model)
+      else
+        str = str.replace('.x.', '')
+      return str
     },
 
     objectClick(i, obj) {
@@ -87,7 +94,7 @@ let app = new Vue({
     },
 
     createMarker() {
-
+      mp.trigger('me:createMarker')
     },
 
     windowOpen(win) {app.window = win},
@@ -106,6 +113,7 @@ let app = new Vue({
     },
 
     windowSave() {
+      // todo
       app.window = null
     }
   }
@@ -116,7 +124,7 @@ addEventListener('keydown', e=> {
   if (e.key == 'ArrowDown' || e.key == 'ArrowUp') {
     let arr, i
     if (app.window == 'objects')
-      arr = app.result
+      arr = app.objectsResult
     else return
 
     if (e.key == 'ArrowDown') {

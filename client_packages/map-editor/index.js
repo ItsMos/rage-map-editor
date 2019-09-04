@@ -78,6 +78,8 @@ function generateEntityList() {
     list[id] = {id: id, type: entities[id].type}
     if (entities[id].model)
       list[id].model = entities[id].model
+    if (entities[id].name)
+      list[id].name = entities[id].name
   }
   return list
 }
@@ -106,6 +108,7 @@ mp.keys.bind(keysHex.Delete, true, ()=> {
   }
 })
 
+// select, deselect entities
 mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, hitEntity)=> {
   if (mp.gui.cursor.visible)
     return
@@ -114,8 +117,9 @@ mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, h
     if (!hit) {
       if (selectedObject) {
         let obj = {
-          id: selectedObject.id,
-          model: selectedObject.model,
+          id: selectedObject._id,
+          type: selectedObject.type,
+          model: selectedObject.name? selectedObject.name : selectedObject.model,
           position: selectedObject.position,
           rotation: selectedObject.rotation
         }
@@ -178,14 +182,14 @@ function deselectObject() {
 
 // render function
 function moveObject() {
-  let UpDownSign = 0
-  let RLSign = 0
-  let zSign = 0
-  let dist = 0.70
+  let UpDownSign = 0, RLSign = 0
+  zSign = 0, speed = 0.70
+
   if (mp.keys.isDown(keys.Alt))
-    dist = 0.25
+    speed = 0.25
   if (mp.keys.isDown(keys.Shift))
-    dist = 1.25
+    speed = 1.25
+  
   if (mp.keys.isDown(keys.Up))
     UpDownSign = 1
   if (mp.keys.isDown(keys.Down))
@@ -198,19 +202,44 @@ function moveObject() {
     zSign = 1
   if (mp.keys.isDown(keys.PageDown))
     zSign = -1
+  
+  // rotation control
+  if (mp.keys.isDown(keys.LCtrl)) {
+    // zSign = X rot, RLSign = Z rot, UpDownSign = Y rot
+    let rot = selectedObject.rotation,
+    x = (rot.x + (zSign * speed)) % 360,
+    y = (rot.y + (UpDownSign * speed)) % 360,
+    z = (rot.z + (RLSign * speed)) % 360
+    selectedObject.rotation = new mp.Vector3(x, y, z)
 
-  let pos = selectedObject.position
-  let camDir = noClipCamera.getDirection()
-  let rightVec = new mp.Vector3(camDir.y,  -camDir.x, 0)
-  rightVec = new mp.Vector3(
-    rightVec.x * (RLSign * dist),
-    rightVec.y * (RLSign * dist),
-    0)
-  camDir = new mp.Vector3(
-    camDir.x * (UpDownSign * dist),
-    camDir.y * (UpDownSign * dist),
-    0)
-  selectedObject.position = new mp.Vector3(pos.x+camDir.x + rightVec.x,pos.y+camDir.y + rightVec.y, pos.z + (dist * zSign))
+  } else {
+    // position control
+    let pos = selectedObject.position
+    let camDir = noClipCamera.getDirection()
+    let rightVec = new mp.Vector3(camDir.y,  -camDir.x, 0)
+    rightVec = new mp.Vector3(
+      rightVec.x * (RLSign * speed),
+      rightVec.y * (RLSign * speed),
+      0)
+    camDir = new mp.Vector3(
+      camDir.x * (UpDownSign * speed),
+      camDir.y * (UpDownSign * speed),
+      0)
+    selectedObject.position = new mp.Vector3(pos.x+camDir.x + rightVec.x,pos.y+camDir.y + rightVec.y, pos.z + (speed * zSign))
+  }
+
+}
+
+function createEntity(entity, pos, name) {
+  if (entity == 'marker') {
+    return mp.markers.new(0, new mp.Vector3(pos.x,pos.y,pos.z),1)
+  }
+  let obj = mp.objects.new(mp.game.joaat(entity), pos, {
+    rotation: new mp.Vector3(0,0,0),
+    dimension: player.dimension
+  })
+  obj.name = entity
+  return obj
 }
 
 mp.events.add({
@@ -246,11 +275,14 @@ mp.events.add({
       pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
       pos.z += noClipCamera.getDirection().z * 10
     }
-    
-    viewedObject = mp.objects.new(mp.game.joaat(object), pos, {
-      rotation: new mp.Vector3(0,0,0),
-      dimension: player.dimension
-    })
+    viewedObject = createEntity(object, pos)
+  },
+  'me:createMarker': ()=> {
+    let pos = inFrontOf(noClipCamera.getCoord(), noClipCamera.getRot(2).z, 5)
+    pos.z += noClipCamera.getDirection().z * 10
+    let m = createEntity('marker', pos)
+    m._id = generateId()
+    entities[m._id] = m
   },
   'me:createObject': ()=> {
     if (!viewedObject) return
@@ -262,11 +294,13 @@ mp.events.add({
     motionRender = new mp.Event('render', moveObject)
     let obj = {
       id: generateId(),
+      type: viewedObject.type,
       model: viewedObject.model,
+      name: viewedObject.name,
       position: viewedObject.position,
       rotation: viewedObject.rotation
     }
-    selectedObject.id = obj.id
+    selectedObject._id = obj.id
     entities[obj.id] = selectedObject
     mp.events.callRemote('me:placeObject', JSON.stringify(obj))
     viewedObject = null
@@ -288,8 +322,7 @@ mp.events.add({
     setTimeout(()=> {
       noClipCamera.stopPointing()
     }, 500)
-  },
-  'me:createMarker': ()=>{},
+  }
 
 })
 

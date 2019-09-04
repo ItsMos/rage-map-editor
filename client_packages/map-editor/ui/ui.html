@@ -16,8 +16,8 @@
 
     <div class="nav" v-show='!window == true && !isHoldingObject'>
       <button class="nav-btn object" @click="windowOpen('objects')"></button>
-      <button class="nav-btn vehicle" @click="windowOpen('')"></button>
-      <button class="nav-btn marker" @click="windowOpen('marker')"></button>
+      <button class="nav-btn vehicle" @click="windowOpen('vehicles')"></button>
+      <button class="nav-btn marker" @click='createMarker'></button>
     </div>
 
     <div class="side-bar object-list" v-show="window == 'objects'">
@@ -27,7 +27,7 @@
       <hr>
 
       <recycle-scroller
-        class="list scroller" :items="result" :item-size="30"
+        class="list scroller" :items="objectsResult" :item-size="30"
         key-field="obj" v-slot="{ item,index }">
         <div :class='{active: selectedObj.index == index && selectedObj.obj == item.obj}'
           @click='objectClick(index, item.obj)'>
@@ -40,6 +40,22 @@
       </div>
     </div>
 
+    <div class="side-bar" v-show="window == 'vehicles'">
+      <h1>Vehicles</h1>
+
+      <div class="list">
+        <div v-for='(ent,i) in entities'
+          :class='{active: selectedObj.index == i && selectedObj.obj == generateEntityName(ent, ent.id)}'
+          @click='objectClick(i, generateEntityName(ent, ent.id))'>
+          {{ generateEntityName(ent, ent.id) }}
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn btn-error" @click="windowCancel">Cancel</button>
+      </div>
+    </div>
+    
     <div class="side-bar right entities" v-show="window == 'entities'">
       <h1>Created Entities</h1>
 
