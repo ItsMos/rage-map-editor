@@ -29,7 +29,7 @@
       <recycle-scroller
         class="list scroller" :items="objectsResult" :item-size="30"
         key-field="obj" v-slot="{ item,index }">
-        <div :class='{active: selectedObj.index == index && selectedObj.obj == item.obj}'
+        <div :class='{active: selectedObj.obj == item.obj}'
           @click='objectClick(index, item.obj)'>
           {{ item.obj }}
         </div>
@@ -45,7 +45,7 @@
 
       <div class="list">
         <div v-for='(ent,i) in entities'
-          :class='{active: selectedObj.index == i && selectedObj.obj == generateEntityName(ent, ent.id)}'
+          :class='{active: selectedObj.obj == generateEntityName(ent, ent.id)}'
           @click='objectClick(i, generateEntityName(ent, ent.id))'>
           {{ generateEntityName(ent, ent.id) }}
         </div>
@@ -61,7 +61,7 @@
 
       <div class="list">
         <div v-for='(ent,i) in entities'
-          :class='{active: selectedObj.index == i && selectedObj.obj == generateEntityName(ent, ent.id)}'
+          :class='{active: selectedObj.obj == generateEntityName(ent, ent.id)}'
           @click='objectClick(i, generateEntityName(ent, ent.id))'>
           {{ generateEntityName(ent, ent.id) }}
         </div>

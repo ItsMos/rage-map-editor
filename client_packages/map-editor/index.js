@@ -72,6 +72,22 @@ mp.keys.bind(keysHex.F2, true, function() {
   }
 })
 
+let tempObject
+// entity props window
+mp.keys.bind(keysHex.F3, true, ()=> {
+  if (!selectedObject || tempObject) return
+  // if (selectedObject.type == 'object') {
+  //   tempObject = createEntity(selectedObject.name, selectedObject.position)
+  //   tempObject.setVisible(false, true)
+  //   cef.execute(`app.window = 'object'`)
+  // }
+  // if (selectedObject.type == 'marker') {
+  //   tempObject = createEntity('marker', selectedObject.position)
+  //   tempObject.visible = false
+  //   cef.execute(`app.window = 'marker'`)
+  // }
+})
+
 function generateEntityList() {
   let list = {}
   for (let id in entities) {
@@ -113,6 +129,8 @@ mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, h
   if (mp.gui.cursor.visible)
     return
   if (leftOrRight == 'left' && upOrDown == 'down') {
+    // if modifying entity props in CEF, dont deselect
+    if (tempObject) return
     let hit = hitTest()
     if (!hit) {
       if (selectedObject) {
@@ -182,6 +200,7 @@ function deselectObject() {
 
 // render function
 function moveObject() {
+  if (mp.gui.cursor.visible) return
   let UpDownSign = 0, RLSign = 0
   zSign = 0, speed = 0.70
 
@@ -231,9 +250,9 @@ function moveObject() {
 }
 
 function createEntity(entity, pos, name) {
-  if (entity == 'marker') {
+  if (entity == 'marker')
     return mp.markers.new(0, new mp.Vector3(pos.x,pos.y,pos.z),1)
-  }
+  
   let obj = mp.objects.new(mp.game.joaat(entity), pos, {
     rotation: new mp.Vector3(0,0,0),
     dimension: player.dimension
@@ -318,10 +337,13 @@ mp.events.add({
     motionRender = new mp.Event('render', moveObject)
     let pos = inFrontOf(selectedObject.position, 0, 10)
     noClipCamera.setCoord(pos.x,pos.y,pos.z)
-    noClipCamera.pointAt(selectedObject.handle, 0,0,0,true)
-    setTimeout(()=> {
-      noClipCamera.stopPointing()
-    }, 500)
+    // markers dont have .handle
+    if (selectedObject.type != 'marker') {
+      noClipCamera.pointAt(selectedObject.handle, 0,0,0,true)
+      setTimeout(()=> {
+        noClipCamera.stopPointing()
+      }, 500)
+    }
   }
 
 })

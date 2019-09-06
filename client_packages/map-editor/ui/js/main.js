@@ -26,7 +26,7 @@ let app = new Vue({
     // let a = await fetch('http://127.0.0.1:8080/objects.json')
     // let json = await a.json()
     
-    // let x = Object.keys(json).map(function(key) {
+    // let x = json.map(function(key) {
     //   return { obj: key}
     // })
     // this.updateObjectsList(x)
@@ -64,24 +64,28 @@ let app = new Vue({
     },
 
     generateEntityName(ent,id) {
-      let str =  `${ent.type} .x. (${id})`
+      let str = ''
+      if (ent.type != 'object')
+        str += ent.type + ' '
       if (ent.name)
-        str = str.replace('.x.', ent.name)
+        str += ent.name + ' '
       else if (ent.model)
-        str = str.replace('.x.', ent.model)
-      else
-        str = str.replace('.x.', '')
+        str += ent.model + ' '
+      str += `(${id})`
       return str
     },
 
     objectClick(i, obj) {
+      // double click
       if (this.selectedObj.index == i && this.selectedObj.obj == obj) {
         if (this.window == 'objects') {
           this.window = null
-          this.selectedObj = {index: null, obj: ''}
           // start moving the viewed object in game world
           mp.trigger('me:createObject')
         }
+        
+        this.selectedObj = {index: null, obj: ''}
+
       } else {
         this.selectedObj.index = i
         this.selectedObj.obj = obj
