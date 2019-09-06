@@ -115,7 +115,7 @@ mp.keys.bind(keysHex.F5, true, ()=> {
 
 mp.keys.bind(keysHex.Delete, true, ()=> {
   if (selectedObject) {
-    let id = selectedObject.id
+    let id = selectedObject._id
     deselectObject()
     entities[id].destroy()
     mp.events.callRemote('me:deleteObject', id)
