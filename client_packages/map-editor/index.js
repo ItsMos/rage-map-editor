@@ -45,7 +45,8 @@ let keysHex = {
   F2: 0x71,
   F3: 0x72,
   F5: 0x74,
-  Delete: 0x2E
+  Delete: 0x2E,
+  C: 0x43
 }
 let keys = {
   Left: 37,
@@ -124,6 +125,21 @@ mp.keys.bind(keysHex.Delete, true, ()=> {
   }
 })
 
+mp.keys.bind(keysHex.C, true, ()=> {
+  if (mp.keys.isDown(keys.LCtrl)) {
+    if (!selectedObject) return
+    let name
+    if (selectedObject.type == 'marker')
+      name = 'marker'
+    else name = selectedObject.name
+    viewedObject = createEntity(name, selectedObject.position)
+    viewedObject.rotation = selectedObject.rotation
+    deselectObject()
+    mp.events.call('me:createObject')
+    mp.game.graphics.notify('~g~Object copied!')
+  }
+})
+
 // select, deselect entities
 mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, hitEntity)=> {
   if (mp.gui.cursor.visible)
@@ -132,16 +148,18 @@ mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, h
     // if modifying entity props in CEF, dont deselect
     if (tempObject) return
     let hit = hitTest()
+    if (selectedObject) {
+      let obj = {
+        id: selectedObject._id,
+        type: selectedObject.type,
+        model: selectedObject.name? selectedObject.name : selectedObject.model,
+        position: selectedObject.position,
+        rotation: selectedObject.rotation
+      }
+      mp.events.callRemote('me:updateObject', JSON.stringify(obj))
+    }
     if (!hit) {
       if (selectedObject) {
-        let obj = {
-          id: selectedObject._id,
-          type: selectedObject.type,
-          model: selectedObject.name? selectedObject.name : selectedObject.model,
-          position: selectedObject.position,
-          rotation: selectedObject.rotation
-        }
-        mp.events.callRemote('me:updateObject', JSON.stringify(obj))
         deselectObject()
       }
     } else {
@@ -224,6 +242,7 @@ function moveObject() {
   
   // rotation control
   if (mp.keys.isDown(keys.LCtrl)) {
+    if (selectedObject.type == 'marker') return
     // zSign = X rot, RLSign = Z rot, UpDownSign = Y rot
     let rot = selectedObject.rotation,
     x = (rot.x + (zSign * speed)) % 360,
@@ -302,6 +321,11 @@ mp.events.add({
     let m = createEntity('marker', pos)
     m._id = generateId()
     entities[m._id] = m
+    let obj = {
+      id: m._id, type: m.type,
+      model: m.model, position: m.position
+    }
+    mp.events.callRemote('me:placeObject', JSON.stringify(obj))
   },
   'me:createObject': ()=> {
     if (!viewedObject) return
@@ -314,8 +338,7 @@ mp.events.add({
     let obj = {
       id: generateId(),
       type: viewedObject.type,
-      model: viewedObject.model,
-      name: viewedObject.name,
+      model: viewedObject.name? viewedObject.name : viewedObject.model,
       position: viewedObject.position,
       rotation: viewedObject.rotation
     }
