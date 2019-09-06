@@ -14,10 +14,47 @@
       <use xlink:href="img/crosshair.svg#Capa_1"></use>
    </svg>
 
-    <div class="nav" v-show='!window == true && !isHoldingObject'>
+    <div class="nav" v-show='!window && !isHoldingObject'>
+      <button class="nav-btn save" @click="quickSave"></button>
+      <button class="nav-btn save-as" @click="windowOpen('save-as')"></button>
+    </div>
+
+    <div class="nav nav-bottom" v-show='!window && !isHoldingObject'>
       <button class="nav-btn object" @click="windowOpen('objects')"></button>
       <button class="nav-btn vehicle" @click="windowOpen('vehicles')"></button>
       <button class="nav-btn marker" @click='createMarker'></button>
+    </div>
+
+    <div id='save-as' class='window' v-show='window == "save-as"'>
+      <h1>Save Map</h1>
+      <h4>Meta</h4>
+      <div class="input">
+        <label>Map Name:</label>
+        <input v-model='map.name' type="text">
+      </div>
+      <div class="input">
+        <label>Author:</label>
+        <input v-model='map.author' type="text">
+      </div>
+      <div class="input">
+        <label>Gamemode:</label>
+        <input v-model='map.gamemode' type="text">
+      </div>
+      <label>Description:</label><br>
+      <textarea v-model='map.desc'></textarea>
+
+      <hr>
+      <div class="input">
+        <label>File Name:</label>
+        <input v-model='map.file' @keypress='filterFileName' type="text">
+      </div>
+
+      <p v-if='fileExists' class='warn'>Map with this file name already exists, to overwrite it press save again</p>
+
+      <div class="btns">
+        <button class="btn btn-error" @click="windowCancel">Cancel</button>
+        <button class="btn btn-success" @click="windowSave">Save</button>
+      </div>
     </div>
 
     <div class="side-bar object-list" v-show="window == 'objects'">

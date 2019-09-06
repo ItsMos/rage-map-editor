@@ -18,18 +18,28 @@ let app = new Vue({
       color: [0,0,0,0],
       pos: {x:0, y:0, z:0},
       rot: {x:0, y:0, z:0}
-    }
+    },
+    map: {
+      name: '',
+      author: '',
+      gamemode: '',
+      desc: '',
+      file: ''
+    },
+    fileExists: null,
+    savedFile: ''
   },
 
-  // for browser testing
-  async mounted() {
-    // let a = await fetch('http://127.0.0.1:8080/objects.json')
-    // let json = await a.json()
-    
-    // let x = json.map(function(key) {
-    //   return { obj: key}
-    // })
-    // this.updateObjectsList(x)
+  watch: {
+    'map.name': function (val) {
+      let match = this.map.name.trim().replace(' ', '_').match(/[\w-_'\[\]]+/g)
+      if (match)
+        this.map.file = match.join('_')
+    },
+
+    'map.file': function () {
+      app.fileExists = null
+    }
   },
 
   computed: {
@@ -107,9 +117,8 @@ let app = new Vue({
       if (app.window == 'entities')
         app.entities = {}
       // selected in new object list
-      if (this.selectedObj != null) {
+      if (this.selectedObj.obj)
         mp.trigger('me:cancelObjectView')
-      }
       app.window = null
       this.selectedObj = {index: null, obj: ''}
       mp.invoke('focus', false)
@@ -117,8 +126,42 @@ let app = new Vue({
     },
 
     windowSave() {
-      // todo
+      if (app.window == 'save-as') {
+        if (!app.map.file) return
+        if (app.fileExists == null)
+          mp.trigger('me:checkFileExists', this.map.file)
+        else {
+          // overwrite
+          this.saveMap()
+        }
+        return
+      }
       app.window = null
+    },
+
+    // called if file dont exist or overwrite
+    saveMap() {
+      mp.trigger('me:saveMap', app.map.file, app.map.name, app.map.author,
+        app.map.gamemode, app.map.desc)
+      app.savedFile = app.map.file
+      app.fileExists = null
+      app.window = null
+      mp.invoke('focus', false)
+      app.crosshair = true
+    },
+
+    quickSave() {
+      if (app.savedFile == app.map.file && app.savedFile) {
+        mp.trigger('me:saveMap', app.map.file, app.map.name, app.map.author,
+        app.map.gamemode, app.map.desc)
+      } else {
+        alert('Use "Save As" first, or open a map')
+      }
+    },
+
+    filterFileName(ev) {
+      if (!ev.key.match(/[\w-_'\[\]]/))
+        return ev.preventDefault()
     }
   }
 })

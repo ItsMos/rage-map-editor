@@ -134,6 +134,7 @@ mp.keys.bind(keysHex.C, true, ()=> {
     else name = selectedObject.name
     viewedObject = createEntity(name, selectedObject.position)
     viewedObject.rotation = selectedObject.rotation
+    
     deselectObject()
     mp.events.call('me:createObject')
     mp.game.graphics.notify('~g~Object copied!')
@@ -148,16 +149,9 @@ mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, h
     // if modifying entity props in CEF, dont deselect
     if (tempObject) return
     let hit = hitTest()
-    if (selectedObject) {
-      let obj = {
-        id: selectedObject._id,
-        type: selectedObject.type,
-        model: selectedObject.name? selectedObject.name : selectedObject.model,
-        position: selectedObject.position,
-        rotation: selectedObject.rotation
-      }
-      mp.events.callRemote('me:updateObject', JSON.stringify(obj))
-    }
+    if (selectedObject)
+      syncEntity(selectedObject)
+    
     if (!hit) {
       if (selectedObject) {
         deselectObject()
@@ -280,6 +274,17 @@ function createEntity(entity, pos, name) {
   return obj
 }
 
+function syncEntity(ent) {
+  let obj = {
+    id: ent._id,
+    type: ent.type,
+    model: ent.name? ent.name : ent.model,
+    position: ent.position,
+    rotation: ent.rotation
+  }
+  mp.events.callRemote('me:upsertEntity', JSON.stringify(obj))
+}
+
 mp.events.add({
   'me:start': ()=> {
     if (cef) return
@@ -321,11 +326,7 @@ mp.events.add({
     let m = createEntity('marker', pos)
     m._id = generateId()
     entities[m._id] = m
-    let obj = {
-      id: m._id, type: m.type,
-      model: m.model, position: m.position
-    }
-    mp.events.callRemote('me:placeObject', JSON.stringify(obj))
+    syncEntity(m)
   },
   'me:createObject': ()=> {
     if (!viewedObject) return
@@ -335,16 +336,9 @@ mp.events.add({
     selectObject()
     // enable object movement
     motionRender = new mp.Event('render', moveObject)
-    let obj = {
-      id: generateId(),
-      type: viewedObject.type,
-      model: viewedObject.name? viewedObject.name : viewedObject.model,
-      position: viewedObject.position,
-      rotation: viewedObject.rotation
-    }
-    selectedObject._id = obj.id
-    entities[obj.id] = selectedObject
-    mp.events.callRemote('me:placeObject', JSON.stringify(obj))
+    selectedObject._id = generateId()
+    syncEntity(selectedObject)
+    entities[selectedObject._id] = selectedObject
     viewedObject = null
   },
   'me:cancelObjectView': ()=> {
@@ -367,6 +361,16 @@ mp.events.add({
         noClipCamera.stopPointing()
       }, 500)
     }
+  },
+
+  'me:checkFileExists': file=> mp.events.callRemote('me:checkFileExists', file),
+  'me:checkFileResult': exist=> {
+    cef.execute(`app.fileExists = ${exist}`)
+    if (!exist)
+      cef.execute(`app.saveMap()`)
+  },
+  'me:saveMap': (file, name, author, gamemode, desc)=> {
+    mp.events.callRemote('me:saveMap', file, name, author, gamemode, desc)
   }
 
 })

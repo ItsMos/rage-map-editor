@@ -1,7 +1,7 @@
 * {box-sizing: border-box}
 body {
   color: #f8f8f8;
-  font-family: sans-serif;
+  font-family: 'Raleway', sans-serif;
   user-select: none;
 }
 
@@ -17,11 +17,11 @@ body {
 
 .nav {
   position: fixed;
-  bottom: 1em;
   display: flex;
   width: 100%;
   justify-content: center;
 }
+.nav-bottom {bottom: 1em}
 .nav-btn {
   padding: 25px 30px;
   margin: 0 0.5em;
@@ -33,6 +33,14 @@ body {
 }
 .nav-btn:active {outline: none;opacity: 0.5}
 
+.nav-btn.save {background-image: url(../img/save.png)}
+.nav-btn.save:hover {
+  background-image: url(../img/save.png),linear-gradient(rgba(255,255,255,0.5),transparent);
+}
+.nav-btn.save-as {background-image: url(../img/save-as.png)}
+.nav-btn.save-as:hover {
+  background-image: url(../img/save-as.png),linear-gradient(rgba(255,255,255,0.5),transparent);
+}
 .nav-btn.object {background-image: url(../img/cube.png)}
 .nav-btn.object:hover {
   background-image: url(../img/cube.png),linear-gradient(rgba(255,255,255,0.5),transparent);
@@ -56,11 +64,35 @@ body {
 
 .btn-error {background: tomato}
 .btn-success {background: royalblue}
+.warn {
+  color: limegreen;
+  padding: 10px;
+  border: 1px solid limegreen;
+  border-radius: 2px;
+  text-align: center;
+}
+
+input, textarea {
+  color: #f8f8f8;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 0;
+  border-radius: 3px;
+}
+textarea {
+  margin-top: 5px;
+  width: 100%;
+}
+input:focus, textarea:focus {
+  background: rgba(255, 255, 255, 0.3)
+}
+
+.window {
+  width: 35%;
+  margin: auto;
+}
 
 .side-bar {
-  padding: 10px 15px;
-  background: rgba(0, 0, 0, .8);
-  font-family: 'Raleway';
   height: 85%;
   width: 24%;
   max-width: 327px;
@@ -68,24 +100,31 @@ body {
   position: fixed;
   overflow: hidden;
 }
-
+.window, .side-bar {
+  background: rgba(0, 0, 0, .8);
+  padding: 10px 15px;
+}
+.window > h1, .side-bar > h1 {
+  margin: 0;
+  border-bottom: 1px solid #c4c4c4;
+}
+.window > h4, .side-bar > h4 {
+  margin: 1em 0 0;
+  text-align: center;
+}
 .side-bar.right {right: 10px}
-.side-bar > .btns {text-align: center}
+.side-bar > .btns, .window > .btns {text-align: center}
 
 .side-bar.marker {
   height: auto;
   display: flex;
   flex-direction: column;
 }
-.marker > .input {
+.input {
   display: flex;
   justify-content: space-between;
   margin: 10px 0;
   flex-wrap: wrap;
-}
-.side-bar h1 {
-  margin: 0;
-  border-bottom: 1px solid #c4c4c4;
 }
 .side-bar input, .side-bar select {
   width: 50%;
