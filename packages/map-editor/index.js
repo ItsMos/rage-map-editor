@@ -19,6 +19,11 @@ function saveMap(file, name, author, gamemode, desc) {
       description: desc
     }
   }
+
+  // escape " in string, then replace with \" at line 42:54
+  for (let key in obj.meta)
+    obj.meta[key] = obj.meta[key].replace(/"/g, '--"')
+
   for (let key in entities) {
     let ent = entities[key]
     if (!obj[ent.type+'s'])
@@ -35,7 +40,7 @@ function saveMap(file, name, author, gamemode, desc) {
   }
 
   let data = JSON.stringify(obj, null, 1)
-  data = data.replace(/(s*"\/)|\/"|\\/g, '')
+  data = data.replace(/(s*"\/)|\/"|\\/g, '').replace(/--"/g, '\\"')
   fs.writeFileSync(`./maps/${file}.json`, data)
 }
 
@@ -57,6 +62,30 @@ mp.events.add({
     if (!author)
       name = 'Unkown'
     saveMap(file, name, author, gamemode, desc)
-    player.notify('~g~Map saved')
+    player.notify('~b~Map saved')
+  },
+
+  'me:newMap': ()=> {
+    entities = {}
+  },
+
+  'me:getMaps': player=> {
+    let maps = fs.readdirSync('./maps')
+    maps = maps.filter(file=> file.endsWith('.json'))
+    maps = maps.map(file=> file.replace('.json', ''))
+    player.call('me:gotMaps', [maps])
+  },
+
+  'me:openMap': (player, map)=> {
+    // send the file as stream of chunks
+    let file = fs.readFileSync('./maps/'+map+'.json', 'utf-8')
+    file = file.replace(/\n/g, '')
+    let buffer = file.match(/.{1,7500}/g)
+    buffer.forEach((chunk,i) => {
+      let eof = null
+      if (i == buffer.length - 1)
+        eof = true
+      player.call('me:streamMapChunks', [chunk, eof])
+    })
   }
 })

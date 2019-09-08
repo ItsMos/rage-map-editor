@@ -27,12 +27,14 @@ let app = new Vue({
       file: ''
     },
     fileExists: null,
-    savedFile: ''
+    savedFile: '',
+    mapList: []
   },
 
   watch: {
     'map.name': function (val) {
-      let match = this.map.name.trim().replace(' ', '_').match(/[\w-_'\[\]]+/g)
+      if (this.savedFile) return
+      let match = this.map.name.trim().replace(' ', '_').match(/[\w-_\[\]]+/g)
       if (match)
         this.map.file = match.join('_')
     },
@@ -93,6 +95,9 @@ let app = new Vue({
           // start moving the viewed object in game world
           mp.trigger('me:createObject')
         }
+
+        if (this.window == 'openMap')
+          app.openMap(this.selectedObj.obj)
         
         this.selectedObj = {index: null, obj: ''}
 
@@ -116,6 +121,8 @@ let app = new Vue({
     windowCancel() {
       if (app.window == 'entities')
         app.entities = {}
+      if (app.window == 'openMap')
+        app.mapList = []
       // selected in new object list
       if (this.selectedObj.obj)
         mp.trigger('me:cancelObjectView')
@@ -155,13 +162,42 @@ let app = new Vue({
         mp.trigger('me:saveMap', app.map.file, app.map.name, app.map.author,
         app.map.gamemode, app.map.desc)
       } else {
+        // no map open or saved before
         alert('Use "Save As" first, or open a map')
       }
     },
 
     filterFileName(ev) {
-      if (!ev.key.match(/[\w-_'\[\]]/))
+      if (!ev.key.match(/[\w-_\[\]]/))
         return ev.preventDefault()
+    },
+
+    newMap() {
+      app.entities = {}
+      let props = ['name', 'author', 'gamemode', 'desc', 'file']
+      props.forEach(prop => {
+        app.map[prop] = ''
+      })
+      app.savedFile = ''
+      mp.trigger('me:newMap')
+      app.window = null
+      mp.invoke('focus', false)
+      app.crosshair = true
+    },
+
+    requestMaps: ()=> mp.trigger('me:getMaps'),
+    reciveMaps(maps) {
+      app.mapList = maps
+      app.windowOpen('openMap')
+    },
+
+    openMap(map) {
+      if (map == app.savedFile)
+        return alert('map already open')
+      mp.trigger('me:openMap', map)
+      app.window = null
+      mp.invoke('focus', false)
+      app.crosshair = true
     }
   }
 })
@@ -191,6 +227,15 @@ addEventListener('keydown', e=> {
     if (el) el.scrollIntoViewIfNeeded()
 
   } else if (e.key == 'Enter') {
-    console.log('enter')
+    // console.log('enter')
   }
 })
+
+function isWriting() {
+  if (document.activeElement.tagName == 'INPUT'
+    || document.activeElement.tagName == 'TEXTAREA')
+    return mp.trigger('me:isWriting', true)
+  mp.trigger('me:isWriting', false)
+}
+addEventListener('focusin', isWriting)
+addEventListener('focusout', isWriting)

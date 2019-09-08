@@ -33,6 +33,14 @@ body {
 }
 .nav-btn:active {outline: none;opacity: 0.5}
 
+.nav-btn.new {background-image: url(../img/file.png)}
+.nav-btn.new:hover {
+  background-image: url(../img/file.png),linear-gradient(rgba(255,255,255,0.5),transparent);
+}
+.nav-btn.open {background-image: url(../img/folder.png)}
+.nav-btn.open:hover {
+  background-image: url(../img/folder.png),linear-gradient(rgba(255,255,255,0.5),transparent);
+}
 .nav-btn.save {background-image: url(../img/save.png)}
 .nav-btn.save:hover {
   background-image: url(../img/save.png),linear-gradient(rgba(255,255,255,0.5),transparent);
@@ -90,6 +98,10 @@ input:focus, textarea:focus {
 .window {
   width: 35%;
   margin: auto;
+  position: fixed;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%)
 }
 
 .side-bar {
@@ -202,4 +214,13 @@ input:focus, textarea:focus {
 
 .active {
   background: steelblue;
+}
+
+.maps.window {
+  height: 45%;
+}
+.maps.window > .list {
+  padding: 20px;
+  border: 1px solid #f8f8f8;
+  border-radius: 2px;
 }

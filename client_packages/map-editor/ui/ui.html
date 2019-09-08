@@ -12,9 +12,11 @@
 
     <svg  class='crosshair' :style='crosshairStyle'>
       <use xlink:href="img/crosshair.svg#Capa_1"></use>
-   </svg>
+    </svg>
 
     <div class="nav" v-show='!window && !isHoldingObject'>
+      <button class="nav-btn new" @click="windowOpen('newMapAlert')"></button>
+      <button class="nav-btn open" @click='requestMaps'></button>
       <button class="nav-btn save" @click="quickSave"></button>
       <button class="nav-btn save-as" @click="windowOpen('save-as')"></button>
     </div>
@@ -23,6 +25,31 @@
       <button class="nav-btn object" @click="windowOpen('objects')"></button>
       <button class="nav-btn vehicle" @click="windowOpen('vehicles')"></button>
       <button class="nav-btn marker" @click='createMarker'></button>
+    </div>
+
+    <div class="window maps" v-if="window == 'openMap'">
+      <h1>Open Map</h1>
+      <div class="list">
+        <div v-for='(map,i) in mapList'
+          :class='{active: selectedObj.obj == map}'
+          @click='objectClick(i, map)'>
+          {{ map }}
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn btn-error" @click='windowCancel'>Cancel</button>
+      </div>
+    </div>
+
+    <div class="window" v-if="window == 'newMapAlert'">
+      <div class="warn">
+      <h3>New Map</h3>
+        <p>You will lose any unsaved work, continue?</p>
+        <div class="btns">
+          <button class="btn btn-error" @click='windowCancel'>Cancel</button>
+          <button class="btn btn-success" @click='newMap'>New Map</button>
+        </div>
+      </div>
     </div>
 
     <div id='save-as' class='window' v-show='window == "save-as"'>

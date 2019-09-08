@@ -42,11 +42,12 @@ function hitTest() {
 }
 
 let keysHex = {
-  F2: 0x71,
+  F: 0x46,
   F3: 0x72,
   F5: 0x74,
   Delete: 0x2E,
-  C: 0x43
+  C: 0x43,
+  T: 0x54
 }
 let keys = {
   Left: 37,
@@ -62,8 +63,21 @@ let keys = {
   Shift: 16
 }
 
-mp.keys.bind(keysHex.F2, true, function() {
-  if (mp.gui.cursor.visible) {
+// stop chat input when writing 'T' in CEF
+let isWriting = false
+mp.keys.bind(keysHex.T, true, ()=> {
+  if (isWriting) {
+    let cursor = mp.gui.cursor.visible
+    mp.gui.chat.activate(false)
+    setTimeout(() => {
+      mp.gui.chat.activate(true)
+      mp.gui.cursor.visible = cursor
+    }, 100)
+  }
+})
+
+mp.keys.bind(keysHex.F, true, function() {
+  if (mp.gui.cursor.visible && !isWriting) {
     mp.gui.cursor.show(false, false)
     showCrosshair(true)
   }
@@ -183,11 +197,13 @@ function selectObject(obj) {
   let max = new mp.Vector3(dim.max.x, dim.max.y, dim.max.z)
   let size = max.subtract(min)
 
-  boxMarker = mp.markers.new(0, new mp.Vector3(pos.x,pos.y,pos.z + size.z+1),1)
+  boxMarker = mp.markers.new(0, new mp.Vector3(pos.x,pos.y,pos.z + size.z+4),1, {
+    color: [255,255,0,255]
+  })
 
   boxRender = new mp.Event('render', ()=> {
     pos = obj.position
-    boxMarker.position = new mp.Vector3(pos.x,pos.y,pos.z + size.z+1)
+    boxMarker.position = new mp.Vector3(pos.x,pos.y,pos.z + size.z+4)
 
     let v1 = new mp.Vector3(pos.x, pos.y, pos.z)
     v1.x += (size.x/2)
@@ -217,7 +233,7 @@ function moveObject() {
   zSign = 0, speed = 0.70
 
   if (mp.keys.isDown(keys.Alt))
-    speed = 0.25
+    speed = 0.15
   if (mp.keys.isDown(keys.Shift))
     speed = 1.25
   
@@ -262,7 +278,7 @@ function moveObject() {
 
 }
 
-function createEntity(entity, pos, name) {
+function createEntity(entity, pos) {
   if (entity == 'marker')
     return mp.markers.new(0, new mp.Vector3(pos.x,pos.y,pos.z),1)
   
@@ -371,9 +387,68 @@ mp.events.add({
   },
   'me:saveMap': (file, name, author, gamemode, desc)=> {
     mp.events.callRemote('me:saveMap', file, name, author, gamemode, desc)
-  }
+  },
+  'me:newMap': ()=> {
+    deselectObject()
+    for (let id in entities)
+      entities[id].destroy()
+    entities = {}
+    mp.events.callRemote('me:newMap')
+  },
+  'me:getMaps': ()=> mp.events.callRemote('me:getMaps'),
+  'me:gotMaps': (maps)=>
+    cef.execute(`app.reciveMaps(${JSON.stringify(maps)})`),
+  'me:openMap': map=> {
+    mp.events.call('me:newMap')
+    openingMapFile = map
+    mp.events.callRemote('me:openMap', map)
+  },
+
+  'me:streamMapChunks': mapChunksOnStream,
+
+  'me:isWriting': bool=> isWriting = bool
 
 })
+
+let openingMapFile = ''
+let buffer = ''
+function mapChunksOnStream(chunk, eos) {
+  buffer += chunk
+  // end of stream
+  if (eos) {
+    let map = JSON.parse(buffer)
+    buffer = ''
+
+    let types = ['objects', 'markers', 'vehicles']
+    types.forEach(type=> {
+      if (!map[type]) return false
+
+      map[type].forEach(ent=> {
+        let _ent = {}
+        if (type == 'markers')
+          _ent = createEntity('marker', ent.pos)
+        else
+          _ent = createEntity(ent.model, ent.pos)
+        if (ent.rot)
+          _ent.rotation = ent.rot
+        _ent._id = generateId()
+        entities[_ent._id] = _ent
+        syncEntity(_ent)
+      })
+    })
+
+    // escape ' and " with \
+    cef.execute(`
+      app.$set(app.map, 'file', '${openingMapFile}')
+      app.savedFile = '${openingMapFile}'
+      app.$set(app.map, 'name', '${map.meta.name.replace(/"/g, "\\\"").replace(/\'/g, "\\\'")}')
+      app.$set(app.map, 'author', '${map.meta.author.replace(/"/g, "\\\"").replace(/\'/g, "\\\'")}')
+      app.$set(app.map, 'gamemode', '${map.meta.gamemode.replace(/"/g, "\\\"").replace(/\'/g, "\\\'")}')
+      app.$set(app.map, 'desc', '${map.meta.description.replace(/"/g, "\\\"").replace(/\'/g, "\\\'")}')
+    `)
+    mp.game.graphics.notify('Map opened ' + openingMapFile)
+  }
+}
 
 setTimeout(() => {
   mp.events.call('me:start')
