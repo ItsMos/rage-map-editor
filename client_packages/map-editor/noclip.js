@@ -20,7 +20,7 @@ var bindVirtualKeys = {
 var bindASCIIKeys = {
   Q: 69,
   E: 81,
-  LCtrl: 17,
+  Alt: 18,
   Shift: 16
 };
 var isNoClip = false;
@@ -39,7 +39,6 @@ mp.keys.bind(bindVirtualKeys.F4, true, function() {
   }
 });
 function startNoClip() {
-  mp.game.graphics.notify('NoClip ~g~activated');
   var camPos = new mp.Vector3(
     localPlayer.position.x,
     localPlayer.position.y,
@@ -55,7 +54,6 @@ function startNoClip() {
   localPlayer.setCollision(false, false);
 }
 function stopNoClip() {
-  mp.game.graphics.notify('NoClip ~r~disabled');
   if (noClipCamera) {
     localPlayer.position = noClipCamera.getCoord();
     localPlayer.setHeading(noClipCamera.getRot(2).z);
@@ -72,7 +70,7 @@ mp.events.add('render', function() {
   if (!noClipCamera || mp.gui.cursor.visible) {
     return;
   }
-  controlModifier = mp.keys.isDown(bindASCIIKeys.LCtrl);
+  controlModifier = mp.keys.isDown(bindASCIIKeys.Alt);
   shiftModifier = mp.keys.isDown(bindASCIIKeys.Shift);
   var rot = noClipCamera.getRot(2);
   var fastMult = 1;

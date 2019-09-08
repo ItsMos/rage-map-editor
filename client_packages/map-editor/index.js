@@ -1,6 +1,7 @@
-let noclip = require('./map-editor/noclip')
-let player = mp.players.local
-let entities = {}
+let noclip = require('./map-editor/noclip'),
+  player = mp.players.local,
+  entities = {},
+  isWriting = false;
 
 function generateId() {
   let i = 0
@@ -46,8 +47,7 @@ let keysHex = {
   F3: 0x72,
   F5: 0x74,
   Delete: 0x2E,
-  C: 0x43,
-  T: 0x54
+  C: 0x43
 }
 let keys = {
   Left: 37,
@@ -62,19 +62,6 @@ let keys = {
   Alt: 18,
   Shift: 16
 }
-
-// stop chat input when writing 'T' in CEF
-let isWriting = false
-mp.keys.bind(keysHex.T, true, ()=> {
-  if (isWriting) {
-    let cursor = mp.gui.cursor.visible
-    mp.gui.chat.activate(false)
-    setTimeout(() => {
-      mp.gui.chat.activate(true)
-      mp.gui.cursor.visible = cursor
-    }, 100)
-  }
-})
 
 mp.keys.bind(keysHex.F, true, function() {
   if (mp.gui.cursor.visible && !isWriting) {
@@ -157,8 +144,8 @@ mp.keys.bind(keysHex.C, true, ()=> {
 
 // select, deselect entities
 mp.events.add('click', (x,y,upOrDown,leftOrRight,relativeX,relativeY,worldPos, hitEntity)=> {
-  if (mp.gui.cursor.visible)
-    return
+  if (!noClipCamera) return
+  if (mp.gui.cursor.visible) return
   if (leftOrRight == 'left' && upOrDown == 'down') {
     // if modifying entity props in CEF, dont deselect
     if (tempObject) return
@@ -253,6 +240,7 @@ function moveObject() {
   // rotation control
   if (mp.keys.isDown(keys.LCtrl)) {
     if (selectedObject.type == 'marker') return
+    if (selectedObject.type == 'vehicle') return
     // zSign = X rot, RLSign = Z rot, UpDownSign = Y rot
     let rot = selectedObject.rotation,
     x = (rot.x + (zSign * speed)) % 360,
@@ -320,6 +308,7 @@ mp.events.add({
       cef.destroy()
       cef = null
     }
+    noclip.stop()
   }
 })
 
@@ -394,6 +383,7 @@ mp.events.add({
       entities[id].destroy()
     entities = {}
     mp.events.callRemote('me:newMap')
+    mp.game.graphics.notify('~y~New map started')
   },
   'me:getMaps': ()=> mp.events.callRemote('me:getMaps'),
   'me:gotMaps': (maps)=>
@@ -406,7 +396,16 @@ mp.events.add({
 
   'me:streamMapChunks': mapChunksOnStream,
 
-  'me:isWriting': bool=> isWriting = bool
+  // true when an html 'input' is in focus
+  'me:isWriting': writing=> {
+    if (writing) {
+      mp.gui.chat.activate(false)
+      isWriting = true
+    } else {
+      mp.gui.chat.activate(true)
+      isWriting = false
+    }
+  }
 
 })
 
@@ -449,6 +448,9 @@ function mapChunksOnStream(chunk, eos) {
     mp.game.graphics.notify('Map opened ' + openingMapFile)
   }
 }
+
+for (let i = 1; i < 4; i++)
+  mp.game.ui.removeNotification(i)
 
 setTimeout(() => {
   mp.events.call('me:start')
