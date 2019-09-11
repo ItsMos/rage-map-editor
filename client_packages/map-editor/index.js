@@ -279,6 +279,7 @@ function createEntity(entity, pos) {
 }
 
 function syncEntity(ent) {
+  if (ent._id == null) return
   let obj = {
     id: ent._id,
     type: ent.type,
