@@ -42,13 +42,6 @@ function hitTest() {
   return false
 }
 
-let keysHex = {
-  F: 0x46,
-  F3: 0x72,
-  F5: 0x74,
-  Delete: 0x2E,
-  C: 0x43
-}
 let keys = {
   Left: 37,
   Up: 38,
@@ -56,14 +49,19 @@ let keys = {
   Down: 40,
   PageUp: 33,
   PageDown: 34,
+  Delete: 46,
+  C: 67,
   E: 69,
   Q: 81,
+  F: 70,
   LCtrl: 17,
   Alt: 18,
-  Shift: 16
+  Shift: 16,
+  F3: 114,
+  F5: 116
 }
 
-mp.keys.bind(keysHex.F, true, function() {
+mp.keys.bind(keys.F, true, function() {
   if (mp.gui.cursor.visible && !isWriting) {
     mp.gui.cursor.show(false, false)
     showCrosshair(true)
@@ -76,7 +74,7 @@ mp.keys.bind(keysHex.F, true, function() {
 
 let tempObject
 // entity props window
-mp.keys.bind(keysHex.F3, true, ()=> {
+mp.keys.bind(keys.F3, true, ()=> {
   if (!selectedObject || tempObject) return
   // if (selectedObject.type == 'object') {
   //   tempObject = createEntity(selectedObject.name, selectedObject.position)
@@ -102,7 +100,7 @@ function generateEntityList() {
   return list
 }
 
-mp.keys.bind(keysHex.F5, true, ()=> {
+mp.keys.bind(keys.F5, true, ()=> {
   let entities = generateEntityList()
   cef.execute(`
     if (app.window == null) {
@@ -115,7 +113,7 @@ mp.keys.bind(keysHex.F5, true, ()=> {
   `)
 })
 
-mp.keys.bind(keysHex.Delete, true, ()=> {
+mp.keys.bind(keys.Delete, true, ()=> {
   if (selectedObject) {
     let id = selectedObject._id
     deselectObject()
@@ -126,7 +124,7 @@ mp.keys.bind(keysHex.Delete, true, ()=> {
   }
 })
 
-mp.keys.bind(keysHex.C, true, ()=> {
+mp.keys.bind(keys.C, true, ()=> {
   if (mp.keys.isDown(keys.LCtrl)) {
     if (!selectedObject) return
     let name
@@ -135,7 +133,7 @@ mp.keys.bind(keysHex.C, true, ()=> {
     else name = selectedObject.name
     viewedObject = createEntity(name, selectedObject.position)
     viewedObject.rotation = selectedObject.rotation
-    
+    syncEntity(selectedObject)
     deselectObject()
     mp.events.call('me:createObject')
     mp.game.graphics.notify('~g~Object copied!')
@@ -217,10 +215,10 @@ function deselectObject() {
 function moveObject() {
   if (mp.gui.cursor.visible) return
   let UpDownSign = 0, RLSign = 0
-  zSign = 0, speed = 0.70
+  zSign = 0, speed = 0.40
 
   if (mp.keys.isDown(keys.Alt))
-    speed = 0.15
+    speed = 0.025
   if (mp.keys.isDown(keys.Shift))
     speed = 1.25
   
@@ -270,7 +268,9 @@ function createEntity(entity, pos) {
   if (entity == 'marker')
     return mp.markers.new(0, new mp.Vector3(pos.x,pos.y,pos.z),1)
   
-  let obj = mp.objects.new(mp.game.joaat(entity), pos, {
+  let model = isNaN(entity)? mp.game.joaat(entity) : parseInt(entity)
+  
+  let obj = mp.objects.new(model, pos, {
     rotation: new mp.Vector3(0,0,0),
     dimension: player.dimension
   })
@@ -417,7 +417,7 @@ function mapChunksOnStream(chunk, eos) {
   if (eos) {
     let map = JSON.parse(buffer)
     buffer = ''
-
+    
     let types = ['objects', 'markers', 'vehicles']
     types.forEach(type=> {
       if (!map[type]) return false
@@ -435,6 +435,17 @@ function mapChunksOnStream(chunk, eos) {
         syncEntity(_ent)
       })
     })
+
+    if (!map.meta)
+      map.meta = {}
+    if (!map.meta.name)
+      map.meta.name = 'Unnamed'
+    if (!map.meta.author)
+      map.meta.author = 'Unkown'
+    if (!map.meta.gamemode)
+      map.meta.gamemode = ''
+    if (!map.meta.description)
+      map.meta.description = ''
 
     // escape ' and " with \
     cef.execute(`
